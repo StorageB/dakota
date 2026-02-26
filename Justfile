@@ -488,11 +488,33 @@ chunkify image_ref:
     fi
 
 # ── bcvk (fast VM testing) ───────────────────────────────────────────
+
+# Ensure bcvk is installed (auto-installs via cargo if missing)
+_ensure-bcvk:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v bcvk &>/dev/null; then
+        exit 0
+    fi
+    echo "bcvk not found. Attempting to install via cargo..."
+    if command -v cargo &>/dev/null; then
+        cargo install --locked --git https://github.com/bootc-dev/bcvk bcvk
+    else
+        echo "ERROR: bcvk is not installed and cargo is not available for auto-install." >&2
+        echo "" >&2
+        echo "Install bcvk manually:" >&2
+        echo "  Cargo:       cargo install --locked --git https://github.com/bootc-dev/bcvk bcvk" >&2
+        echo "  Fedora 42+:  sudo dnf install bcvk" >&2
+        echo "" >&2
+        echo "Also ensure qemu-kvm and virtiofsd are installed on the host." >&2
+        exit 1
+    fi
+
 # Boot the built image instantly in an ephemeral VM via bcvk.
 # No disk image needed -- boots directly from the container via virtiofs.
 # Requires: bcvk, qemu-kvm, virtiofsd (sudo dnf install bcvk qemu-kvm virtiofsd)
 [group('test')]
-boot-fast:
+boot-fast: _ensure-bcvk
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -519,7 +541,7 @@ boot-fast:
 
 # Inspect the built bootc image.
 [group('info')]
-inspect:
+inspect: _ensure-bcvk
     #!/usr/bin/env bash
     set -euo pipefail
 
