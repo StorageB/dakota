@@ -3,18 +3,24 @@
 
 [Bluefin's](https://projectbluefin.io) final form. 
 
-> How dare you.
->
-> -- John Bazzite
-
 `projectbluefin/dakota` is built on [GNOME OS](https://os.gnome.org/) using [BuildStream](https://buildstream.build/). This is a prototype and not ready and may bite.
+
+<a href="https://docs.projectbluefin.io/changelogs">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://docs.projectbluefin.io/img/cards/dakota-dark.png">
+    <img src="https://docs.projectbluefin.io/img/cards/dakota-light.png" alt="Bluefin Dakota" width="800">
+  </picture>
+</a>
 
 ![Dakorator](https://github.com/user-attachments/assets/ee92291d-a617-496e-abb6-9045a4c665ce)
 
 ## Status
 
-- Consume GNOME nightly bootc image (done)
-- Final assembly in this repo (done)
+- Alpha, public testing and [filing issues is appreciated](https://github.com/projectbluefin/dakota/issues)!
+
+## ISO Download
+
+[dakota-live-latest.iso](https://projectbluefin.dev/dakota-live-latest.iso)
 
 ## Goals
 
@@ -29,6 +35,10 @@
     git clone https://github.com/projectbluefin/dakota.git
     cd dakota
     just show-me-the-future
+
+> How dare you.
+>
+> -- John Bazzite
 
 ## Trying it: 
 
