@@ -452,10 +452,10 @@ show-me-the-future:
 
 # ── Chunkah ──────────────────────────────────────────────────────────
 # Use the pre-built chunkah image from quay.io
-# TODO: remove overlay + fakecap-restore step once coreos/chunkah#113 lands
-# (libc fallback for xattr reads).  At that point chunkah can be run with
-# LD_PRELOAD=fakecap.so FAKECAP_MANIFEST=.../fakecap-manifest.tsv directly,
-# without a writable overlay.  See also: projectbluefin/dakota#231.
+# TODO: once coreos/chunkah#113 lands (libc fallback for xattr reads),
+# the overlay + xattr-apply step can be removed. chunkah can then be run
+# with LD_PRELOAD=fakecap.so FAKECAP_MANIFEST=.../fakecap-manifest.tsv.
+# See also: projectbluefin/dakota#231.
 chunkify image_ref:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -471,16 +471,16 @@ chunkify image_ref:
     # Get config from existing image
     CONFIG=$($SUDO_CMD podman inspect "{{image_ref}}")
 
-    # Mount the image as a writable overlay so fakecap-restore can physically
-    # set user.component xattrs.  chunkah uses rustix raw syscalls for xattr
+    # Generate the component filemap from the BST artifact cache.
+    # Must run after "just build" so the artifact cache is populated.
+    echo "==> Generating component filemap..."
+    python3 scripts/gen-filemap.py
+
+    # Mount the image as a writable overlay so we can physically set
+    # user.component xattrs.  chunkah uses rustix raw syscalls for xattr
     # reads (bypassing libc/LD_PRELOAD), so real xattrs must be present.
     # See coreos/chunkah#113.
     LOWER=$($SUDO_CMD podman image mount "{{image_ref}}")
-    UPPER=$(mktemp -d); WORK=$(mktemp -d); MERGED=$(mktemp -d)
-    $SUDO_CMD chmod 755 "$UPPER" "$WORK" "$MERGED"
-    $SUDO_CMD mount -t overlay overlay \
-        -o "lowerdir=${LOWER},upperdir=${UPPER},workdir=${WORK}" \
-        "$MERGED"
 
     cleanup() {
         $SUDO_CMD umount "$MERGED" 2>/dev/null || true
@@ -489,10 +489,14 @@ chunkify image_ref:
     }
     trap cleanup EXIT
 
-    echo "==> Applying user.component xattrs via fakecap-restore..."
-    $SUDO_CMD "$MERGED/usr/lib/chunkah/fakecap-restore" \
-        "$MERGED/usr/lib/chunkah/fakecap-manifest.tsv" \
+    UPPER=$(mktemp -d); WORK=$(mktemp -d); MERGED=$(mktemp -d)
+    $SUDO_CMD chmod 755 "$UPPER" "$WORK" "$MERGED"
+    $SUDO_CMD mount -t overlay overlay \
+        -o "lowerdir=${LOWER},upperdir=${UPPER},workdir=${WORK}" \
         "$MERGED"
+
+    echo "==> Applying user.component xattrs via apply-xattrs.py..."
+    $SUDO_CMD python3 scripts/apply-xattrs.py "$MERGED" files/filemap.json
 
     # Run chunkah against the overlay (bind-mounted read-only).
     # --max-layers 128 gives finer-grained content-based splitting;

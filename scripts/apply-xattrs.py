@@ -43,6 +43,9 @@ def main() -> int:
             try:
                 os.setxattr(str(target), b"user.component",
                             element.encode(), follow_symlinks=False)
+                interval = info.get("interval", "weekly")
+                os.setxattr(str(target), b"user.update-interval",
+                            interval.encode(), follow_symlinks=False)
                 ok += 1
             except OSError as e:
                 err += 1
