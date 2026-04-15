@@ -471,8 +471,13 @@ chunkify image_ref:
     # Get config from existing image
     CONFIG=$($SUDO_CMD podman inspect "{{image_ref}}")
 
-    # Generate the component filemap from the BST artifact cache.
-    # Must run after "just build" so the artifact cache is populated.
+    # Compile fakecap-restore from source if not already built.
+    FAKECAP_RESTORE="{{justfile_directory()}}/files/fakecap/fakecap-restore"
+    if [ ! -x "$FAKECAP_RESTORE" ]; then
+        echo "==> Compiling fakecap-restore..."
+        gcc -O2 -o "$FAKECAP_RESTORE" "{{justfile_directory()}}/files/fakecap/fakecap-restore.c"
+    fi
+
     echo "==> Generating component filemap..."
     python3 scripts/gen-filemap.py
 
@@ -495,8 +500,8 @@ chunkify image_ref:
         -o "lowerdir=${LOWER},upperdir=${UPPER},workdir=${WORK}" \
         "$MERGED"
 
-    echo "==> Applying user.component xattrs via apply-xattrs.py..."
-    $SUDO_CMD python3 scripts/apply-xattrs.py "$MERGED" files/filemap.json
+    echo "==> Applying user.component xattrs via fakecap-restore..."
+    $SUDO_CMD "$FAKECAP_RESTORE" files/fakecap-manifest.tsv "$MERGED"
 
     # Run chunkah against the overlay (bind-mounted read-only).
     # --max-layers 128 gives finer-grained content-based splitting;
