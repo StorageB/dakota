@@ -11,6 +11,10 @@ on:
   merge_group:
     branches: [main]
   workflow_dispatch:
+    # WARNING: Do not manually dispatch immediately after auto/track-* ref bumps
+    # (e.g. Renovate PRs updating gnome-build-meta.bst). Cold builds of GNOME
+    # require gbm.gnome.org to have built the new ref first. The 13:00 UTC
+    # schedule above provides this buffer. Early dispatch = cold build = timeout.
 
 env:
   IMAGE_NAME: dakota
@@ -175,7 +179,7 @@ jobs:
           BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf
         run: |
           just bst build oci/bluefin.bst
-        timeout-minutes: 300
+        timeout-minutes: 420
 
       # ── Export OCI image ──────────────────────────────────────────────
       # Uses the Justfile's `export` recipe: checks out the OCI image
@@ -374,7 +378,7 @@ jobs:
           BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf --option arch aarch64
         run: |
           just bst build oci/bluefin.bst
-        timeout-minutes: 300
+        timeout-minutes: 420
 
       - name: Export OCI image from BuildStream
         id: export
