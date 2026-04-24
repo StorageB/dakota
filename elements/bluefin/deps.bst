@@ -28,6 +28,7 @@ depends:
   - bluefin/sudo-rs.bst
   - bluefin/efibootmgr.bst
   - bluefin/xdg-terminal-exec.bst
+  - bluefin/network.bst
 
   # Include things missing from the gnomeos base image
   - gnome-build-meta.bst:core-deps/fwupd.bst
